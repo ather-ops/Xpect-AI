@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/ather-ops/CineSense-AI/blob/main/02-Assets/Light%20Purple%20and%20White%20Gradient%20Grainy%20Simple%20Abstract%20Offline%20Twitch%20Banner.png?raw=true" alt="CineSense AI Banner" width="100%" />
+<img src="https://github.com/ather-ops/Xpect-AI/blob/main/02-Assets/xepct%20ai%20cover.png?raw=true" alt="CineSense AI Banner" width="100%" />
 
 <br/>
 <br/>
