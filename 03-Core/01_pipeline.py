@@ -1,6 +1,5 @@
 print("=" * 80)
-print("CineSense AI - Full Pipeline")
-print("Author: ather-ops | github.com/ather-ops/CineSense-AI")
+print("Xpect AI - Full Pipeline")
 print("=" * 80)
 
 import pandas as pd
