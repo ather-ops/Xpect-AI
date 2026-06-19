@@ -38,20 +38,7 @@ You type: "something dark and psychological set in Europe." The pipeline embeds 
 
 Five production charts generated from the raw Netflix dataset during ingestion. Saved to `04-Visuals/`.
 
-**Content Type — Movies vs TV Shows**
-![Content Type Distribution](https://github.com/ather-ops/CineSense-AI/blob/main/04-Visuals/Content%20_Type%20_%20Movies_%20vs_Tv%20_shows.png?raw=true)
-
-**Content Growth Over the Years**
-![Content Growth](https://github.com/ather-ops/CineSense-AI/blob/main/04-Visuals/Content_Growth_over_the_Year.png?raw=true)
-
-**Top 10 Content-Producing Countries**
-![Top 10 Countries](https://github.com/ather-ops/CineSense-AI/blob/main/04-Visuals/Top_10_Countries.png?raw=true)
-
-**Top 10 Most Popular Genres**
-![Top 10 Genres](https://github.com/ather-ops/CineSense-AI/blob/main/04-Visuals/Top_10_genres.png?raw=true)
-
-**Audience Segment Distribution by Rating**
-![Segment Distribution](https://github.com/ather-ops/CineSense-AI/blob/main/04-Visuals/Segment_Distribution.png?raw=true)
+![Xpect AI EDA Visuals](https://github.com/ather-ops/Xpect-AI/blob/main/02-Assets/eda-visuals-combined.png?raw=true)
 
 ---
 
