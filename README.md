@@ -38,7 +38,7 @@ You type: "something dark and psychological set in Europe." The pipeline embeds 
 
 Five production charts generated from the raw Netflix dataset during ingestion. Saved to `04-Visuals/`.
 
-![Xpect AI EDA Visuals](https://github.com/ather-ops/Xpect-AI/blob/main/02-Assets/eda-visuals-combined.png?raw=true)
+![Xpect AI EDA Visuals](https://github.com/ather-ops/Xpect-AI/blob/main/04-Visuals/eda-visuals-combined.png?raw=true)
 
 ---
 
