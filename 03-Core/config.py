@@ -7,7 +7,8 @@ import streamlit as st
 
 # Load .env file and configuration
 load_dotenv()
-CHROMA_PATH = "./chroma_data"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHROMA_PATH = os.path.join(BASE_DIR, "chroma_data")
 COLLECTION = "netflix_titles"
 EMBED_MODEL = "all-MiniLM-L6-v2"
 GROQ_MODEL = "openai/gpt-oss-120b"
@@ -72,7 +73,7 @@ Be concise and helpful.
 """
         print("Generating recommendations with Groq...")
         response = client.chat.completions.create(
-            model=GROQ_MODEL,  
+            model=GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=500
