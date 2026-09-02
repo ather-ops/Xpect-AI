@@ -1,7 +1,8 @@
-chromadb
-sentence-transformers
-groq
 pandas
 numpy
+sentence-transformers
+chromadb
+groq
 python-dotenv
 streamlit
+torchvision
