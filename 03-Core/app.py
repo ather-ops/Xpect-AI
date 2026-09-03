@@ -1,39 +1,66 @@
+import os
+import sys
+
 import streamlit as st
-from config import load_engine, get_answer
+
+# Make sibling modules importable no matter what CWD Streamlit Cloud uses.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from config import diagnostics, load_engine, get_answer
 
 st.set_page_config(
     page_title="Xpect AI",
-    page_icon="🪅",
+    page_icon="\U0001fa85",
     layout="centered"
 )
 
-@st.cache_resource
+# Print vector-store diagnostics to the Streamlit Cloud logs on every boot.
+print("[xpect] ---- startup diagnostics ----")
+print(f"[xpect] cwd: {os.getcwd()}")
+for _path, _status in diagnostics():
+    print(f"[xpect]   {_status:<13} {_path}")
+print("[xpect] -----------------------------")
+
+
+@st.cache_resource(show_spinner=False)
 def load_engine_cached():
+    """
+    Load the engine, building the vector store on first boot if needed.
+
+    On Streamlit Cloud the prebuilt chroma_data is usually unusable (Git LFS
+    pointer stubs), so the first boot embeds the CSV. That takes a few minutes
+    but is cached for the life of the container.
+    """
+    status_box = st.empty()
+
+    def progress(msg):
+        status_box.info(f"\u26a1 First-time setup: {msg}")
+
     try:
-        embed, coll, llm = load_engine()
-        if coll is None:
-            st.warning("⚡ Building movie database for the first time...")
-            from pipeline import build_chroma_collection
-            build_chroma_collection()
-            embed, coll, llm = load_engine()
-        return embed, coll, llm
-    except Exception as e:
-        st.error(f"Error: {e}")
+        embed, coll, llm = load_engine(progress=progress)
+    except Exception as exc:
+        status_box.empty()
+        st.error(f"Error: {exc}")
         return None, None, None
 
-@st.cache_resource
-def load_engine_cached():
-    try:
-        embed, coll, llm = load_engine()
-        return embed, coll, llm
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return None, None, None
+    status_box.empty()
+    return embed, coll, llm
 
-embed_model, collection, llm = load_engine_cached()
 
-if not collection:
-    st.warning("Collection not found. Run pipeline first.")
+with st.spinner("Warming up Xpect AI... first boot builds the movie index."):
+    embed_model, collection, llm = load_engine_cached()
+
+if collection is None:
+    st.error("Could not load the movie database.")
+    with st.expander("Diagnostics"):
+        st.write(f"Working directory: `{os.getcwd()}`")
+        for _path, _status in diagnostics():
+            st.write(f"- `{_status}` - `{_path}`")
+        st.caption(
+            "`lfs-pointers` means chroma_data was committed via Git LFS but "
+            "the deploy environment never downloaded the real files. Check "
+            "that GROQ_API_KEY is set in Settings > Secrets, then reboot."
+        )
     st.stop()
 
 st.title("Xpect AI")
