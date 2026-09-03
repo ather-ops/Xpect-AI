@@ -7,6 +7,19 @@ st.set_page_config(
     layout="centered"
 )
 
+@st.cache_resource
+def load_engine_cached():
+    try:
+        embed, coll, llm = load_engine()
+        if coll is None:
+            st.warning("⚡ Building movie database for the first time...")
+            from pipeline import build_chroma_collection
+            build_chroma_collection()
+            embed, coll, llm = load_engine()
+        return embed, coll, llm
+    except Exception as e:
+        st.error(f"Error: {e}")
+        return None, None, None
 
 @st.cache_resource
 def load_engine_cached():
