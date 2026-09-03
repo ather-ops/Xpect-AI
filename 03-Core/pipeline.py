@@ -1,10 +1,4 @@
-"""
-Build the ChromaDB collection of Netflix titles.
-
-This module is importable: importing it does NOT run the pipeline, so the app
-can call `build_chroma_collection()` on demand when no prebuilt store exists.
-Run directly (`python pipeline.py`) to build locally.
-"""
+"""Build the ChromaDB collection of Netflix titles from the source CSV."""
 
 import os
 import warnings
@@ -13,32 +7,16 @@ warnings.filterwarnings("ignore")
 
 import pandas as pd
 
-try:  # allow both `import pipeline` and `from core import pipeline`
-    from paths import (
-        COLLECTION,
-        EMBED_MODEL,
-        resolve_csv_path,
-        writable_build_path,
-    )
-except ImportError:  # pragma: no cover
-    from .paths import (
-        COLLECTION,
-        EMBED_MODEL,
-        resolve_csv_path,
-        writable_build_path,
-    )
+try:
+    from paths import COLLECTION, EMBED_MODEL, resolve_csv_path, writable_build_path
+except ImportError:
+    from .paths import COLLECTION, EMBED_MODEL, resolve_csv_path, writable_build_path
 
 BATCH_SIZE = 500
 
 
 def _sentence_chunk(text, max_sentence=2):
-    """
-    Split text into chunks of `max_sentence` sentences.
-
-    Uses NLTK when its punkt data is available, otherwise falls back to a
-    dependency-free regex splitter. Streamlit Cloud frequently cannot download
-    NLTK data at runtime, and a hard failure here used to kill the whole build.
-    """
+    """Split text into chunks of max_sentence sentences."""
     try:
         import nltk
         from nltk.tokenize import sent_tokenize
@@ -50,6 +28,7 @@ def _sentence_chunk(text, max_sentence=2):
             nltk.download("punkt_tab", quiet=True)
         sentences = sent_tokenize(text)
     except Exception:
+        # NLTK data is often unavailable on hosted runtimes.
         import re
 
         sentences = [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
@@ -81,16 +60,7 @@ def _safe_year(value):
 
 
 def build_chroma_collection(chroma_path=None, csv_path=None, progress=None):
-    """
-    Build (or rebuild) the `netflix_titles` collection.
-
-    Args:
-        chroma_path: where to persist. Defaults to the first writable location.
-        csv_path:    source CSV. Auto-detected when omitted.
-        progress:    optional callable(str) for UI status updates.
-
-    Returns the path the collection was written to.
-    """
+    """Build the netflix_titles collection and return the path it was written to."""
     import chromadb
     from sentence_transformers import SentenceTransformer
 
@@ -114,9 +84,10 @@ def build_chroma_collection(chroma_path=None, csv_path=None, progress=None):
     all_chunks, metadata_chunks = [], []
     for _, row in df.iterrows():
         combined = " ".join(
-            str(row.get(field, "")) for field in
-            ("title", "director", "cast", "listed_in", "description")
+            str(row.get(field, ""))
+            for field in ("title", "director", "cast", "listed_in", "description")
         ).strip()
+
         chunks = _sentence_chunk(combined)
         for chunk_idx, chunk in enumerate(chunks):
             all_chunks.append(chunk)
@@ -155,7 +126,7 @@ def build_chroma_collection(chroma_path=None, csv_path=None, progress=None):
     ]
     total_batches = (len(all_chunks) + BATCH_SIZE - 1) // BATCH_SIZE
 
-    # Embed and insert in batches so peak memory stays low on small cloud boxes.
+    # Embed in batches to keep peak memory low on small cloud instances.
     for batch_no, start in enumerate(range(0, len(all_chunks), BATCH_SIZE), 1):
         end = start + BATCH_SIZE
         batch_docs = all_chunks[start:end]

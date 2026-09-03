@@ -1,3 +1,5 @@
+"""RAG engine: ChromaDB retrieval plus Groq generation."""
+
 import os
 
 from dotenv import load_dotenv
@@ -7,25 +9,14 @@ from sentence_transformers import SentenceTransformer
 import streamlit as st
 
 try:
-    from paths import (
-        COLLECTION,
-        EMBED_MODEL,
-        resolve_chroma_path,
-        store_status,
-    )
-except ImportError:  # pragma: no cover
-    from .paths import (
-        COLLECTION,
-        EMBED_MODEL,
-        resolve_chroma_path,
-        store_status,
-    )
+    from paths import COLLECTION, EMBED_MODEL, resolve_chroma_path, store_status
+except ImportError:
+    from .paths import COLLECTION, EMBED_MODEL, resolve_chroma_path, store_status
 
 load_dotenv()
 
 GROQ_MODEL = "openai/gpt-oss-120b"
 
-# Resolved lazily so importing config never triggers filesystem work.
 CHROMA_PATH = None
 
 
@@ -39,16 +30,16 @@ def _get_api_key():
     return api_key
 
 
+def _build(chroma_path, progress):
+    try:
+        from pipeline import build_chroma_collection
+    except ImportError:
+        from .pipeline import build_chroma_collection
+    build_chroma_collection(chroma_path=chroma_path, progress=progress)
+
+
 def load_engine(allow_build=True, progress=None):
-    """
-    Load the RAG engine (embedding model, Chroma collection, Groq client).
-
-    Resolves `chroma_data` across several candidate locations, detects Git LFS
-    pointer stubs (the usual Streamlit Cloud failure), and rebuilds the
-    collection from the CSV when no usable store is present.
-
-    Returns (embed_model, collection, groq_client) or (None, None, None).
-    """
+    """Return (embed_model, collection, groq_client), or (None, None, None)."""
     global CHROMA_PATH
 
     try:
@@ -66,18 +57,14 @@ def load_engine(allow_build=True, progress=None):
         if status != "ok":
             if status == "lfs-pointers":
                 print(
-                    "[xpect] chroma_data contains Git LFS pointer stubs, not "
-                    "real data. Streamlit Cloud does not run the LFS smudge "
-                    "filter, so the embeddings were never downloaded."
+                    "[xpect] chroma_data holds Git LFS pointer stubs, not real "
+                    "data. Hosted deploys skip the LFS smudge filter, so the "
+                    "embeddings were never downloaded."
                 )
             if not allow_build:
                 return None, None, None
             print("[xpect] Building the collection from the CSV instead...")
-            try:
-                from pipeline import build_chroma_collection
-            except ImportError:
-                from .pipeline import build_chroma_collection
-            build_chroma_collection(chroma_path=chroma_path, progress=progress)
+            _build(chroma_path, progress)
 
         print("[xpect] Loading embedding model...")
         embed = SentenceTransformer(EMBED_MODEL)
@@ -88,23 +75,18 @@ def load_engine(allow_build=True, progress=None):
         count = collection.count()
         print(f"[xpect] Collection '{COLLECTION}' loaded with {count} chunks.")
 
+        # An empty collection would silently return zero recommendations.
         if count == 0:
-            # An empty collection would silently return zero recommendations.
             if not allow_build:
                 return None, None, None
             print("[xpect] Collection is empty. Rebuilding...")
-            try:
-                from pipeline import build_chroma_collection
-            except ImportError:
-                from .pipeline import build_chroma_collection
-            build_chroma_collection(chroma_path=chroma_path, progress=progress)
+            _build(chroma_path, progress)
             chroma_client = chromadb.PersistentClient(path=chroma_path)
             collection = chroma_client.get_collection(name=COLLECTION)
             print(f"[xpect] Rebuilt with {collection.count()} chunks.")
 
-        client = Groq(api_key=api_key)
         print("[xpect] Engine loaded successfully.")
-        return embed, collection, client
+        return embed, collection, Groq(api_key=api_key)
 
     except Exception as exc:
         print(f"[xpect] Error loading engine: {exc}")
@@ -112,10 +94,10 @@ def load_engine(allow_build=True, progress=None):
 
 
 def diagnostics():
-    """Human-readable state of the vector store, for logs and the UI."""
+    """Return [(path, status)] for every candidate store location."""
     try:
         from paths import candidate_chroma_paths
-    except ImportError:  # pragma: no cover
+    except ImportError:
         from .paths import candidate_chroma_paths
 
     return [(p, store_status(p)) for p in candidate_chroma_paths()]
