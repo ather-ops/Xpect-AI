@@ -1,1 +1,11 @@
+# Vector store is built at runtime from 01-Data/netflix_titles.csv.
+# It must NOT be committed: at ~46MB it needs Git LFS, and Streamlit Cloud
+# does not run the LFS smudge filter, so the deploy only ever receives
+# pointer stubs and the app fails with "Collection not found".
+chroma_data/
 
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
