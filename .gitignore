@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.pyc
@@ -15,3 +16,16 @@ venv/
 # Vector store
 vector_store/
 __pycache__/
+=======
+# Vector store is built at runtime from 01-Data/netflix_titles.csv.
+# It must NOT be committed: at ~46MB it needs Git LFS, and Streamlit Cloud
+# does not run the LFS smudge filter, so the deploy only ever receives
+# pointer stubs and the app fails with "Collection not found".
+chroma_data/
+
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+>>>>>>> d792c1ef9a567f544b37b6d8ad47c60bd9ad65bd
