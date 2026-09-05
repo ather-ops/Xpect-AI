@@ -14,3 +14,4 @@ venv/
 
 # Vector store
 vector_store/
+__pycache__/
