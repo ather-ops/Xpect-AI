@@ -1,0 +1,103 @@
+<svg viewBox="0 0 780 520" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>Xpect-AI — repository structure</title>
+<defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .title  { font-size:32px; font-weight:700; fill:#1f2328; }
+    .folder { font-size:16px; font-weight:500; fill:#1f2328; }
+    .file   { font-size:14px; font-weight:400; fill:#57606a; }
+    .label  { font-size:13px; font-weight:600; }
+    .line   { stroke:#d0d7de; stroke-width:1; }
+  </style>
+  <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+    <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#e8ecf0" stroke-width="0.5"/>
+  </pattern>
+</defs>
+
+<rect x="0" y="0" width="780" height="520" rx="18" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+<rect x="0" y="0" width="780" height="520" rx="18" fill="url(#grid)"/>
+<rect x="0" y="0" width="780" height="520" rx="18" fill="none" stroke="#d0d7de" stroke-width="1"/>
+
+<text x="48" y="66" class="title">Xpect-AI</text>
+<line x1="48" y1="82" x2="580" y2="82" stroke="#d0d7de" stroke-width="1"/>
+
+<g transform="translate(48,108)">
+  <text x="26" y="0" class="folder">01_Data</text>
+  <rect x="78" y="-14" width="34" height="18" rx="9" fill="#7d4c00"/>
+  <text x="95" y="-2" text-anchor="middle" font-family="monospace" font-size="10" font-weight="600" fill="#ffd8a8">raw</text>
+</g>
+
+<g transform="translate(48,148)">
+  <text x="26" y="0" class="folder">02_Assets</text>
+</g>
+
+<g transform="translate(48,188)">
+  <text x="26" y="0" class="folder">03_Core</text>
+</g>
+
+<line x1="72" y1="200" x2="72" y2="280" stroke="#d0d7de" stroke-width="1"/>
+<line x1="72" y1="220" x2="92" y2="220" stroke="#d0d7de" stroke-width="1"/>
+<line x1="72" y1="248" x2="92" y2="248" stroke="#d0d7de" stroke-width="1"/>
+<line x1="72" y1="276" x2="92" y2="276" stroke="#d0d7de" stroke-width="1"/>
+
+<g transform="translate(96,220)">
+  <rect x="0" y="-11" width="14" height="16" rx="2" fill="#dce8f8" stroke="#85b7eb" stroke-width="0.5"/>
+  <text x="20" y="1" class="file">pipeline.py</text>
+</g>
+
+<g transform="translate(96,248)">
+  <rect x="0" y="-11" width="14" height="16" rx="2" fill="#dce8f8" stroke="#85b7eb" stroke-width="0.5"/>
+  <text x="20" y="1" class="file">rag_engine.py</text>
+</g>
+
+<g transform="translate(96,276)">
+  <rect x="0" y="-11" width="14" height="16" rx="2" fill="#dce8f8" stroke="#85b7eb" stroke-width="0.5"/>
+  <text x="20" y="1" class="file">app.py</text>
+</g>
+
+<g transform="translate(48,312)">
+  <text x="26" y="0" class="folder">04_Visuals</text>
+</g>
+
+<line x1="72" y1="324" x2="72" y2="356" stroke="#d0d7de" stroke-width="1"/>
+<line x1="72" y1="356" x2="92" y2="356" stroke="#d0d7de" stroke-width="1"/>
+
+<g transform="translate(96,356)">
+  <rect x="0" y="-13" width="28" height="20" rx="3" fill="#e8d8f8" stroke="#afa9ec" stroke-width="0.5"/>
+  <rect x="34" y="-13" width="28" height="20" rx="3" fill="#d8e8f8" stroke="#85b7eb" stroke-width="0.5"/>
+  <rect x="68" y="-13" width="28" height="20" rx="3" fill="#d8f0e8" stroke="#5dcaa5" stroke-width="0.5"/>
+  <rect x="102" y="-13" width="28" height="20" rx="3" fill="#f8e8d8" stroke="#f0997b" stroke-width="0.5"/>
+</g>
+
+<g transform="translate(48,396)">
+  <text x="26" y="0" class="folder">05_chroma_data</text>
+</g>
+
+<rect x="48" y="420" width="200" height="34" rx="17" fill="#ebe8ff" stroke="#afa9ec" stroke-width="1"/>
+<circle cx="74" cy="437" r="10" fill="#534ab7"/>
+<text x="72" y="441" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">✦</text>
+<text x="138" y="441" text-anchor="middle" class="label" fill="#3c3489">ChromaDB Vector Store</text>
+
+<rect x="390" y="210" width="164" height="36" rx="18" fill="#ebe8ff" stroke="#afa9ec" stroke-width="1"/>
+<text x="472" y="232" text-anchor="middle" font-size="14" font-weight="600" fill="#3c3489">Gemini 2.5 Flash</text>
+
+<rect x="390" y="300" width="130" height="36" rx="18" fill="#d4f8e8" stroke="#1d9e75" stroke-width="1"/>
+<text x="455" y="322" text-anchor="middle" font-size="14" font-weight="600" fill="#085041">Live MVP</text>
+
+<g transform="translate(48,108)">
+  <path d="M 2 -11 L 2 3 Q 2 6 5 6 L 14 6 L 14 9 L 18 9 L 18 -11 Z" fill="#f0c070" stroke="#ba7517" stroke-width="0.5"/>
+</g>
+<g transform="translate(48,148)">
+  <path d="M 2 -11 L 2 3 Q 2 6 5 6 L 14 6 L 14 9 L 18 9 L 18 -11 Z" fill="#f0c070" stroke="#ba7517" stroke-width="0.5"/>
+</g>
+<g transform="translate(48,188)">
+  <path d="M 2 -11 L 2 3 Q 2 6 5 6 L 14 6 L 14 9 L 18 9 L 18 -11 Z" fill="#f0c070" stroke="#ba7517" stroke-width="0.5"/>
+</g>
+<g transform="translate(48,312)">
+  <path d="M 2 -11 L 2 3 Q 2 6 5 6 L 14 6 L 14 9 L 18 9 L 18 -11 Z" fill="#f0c070" stroke="#ba7517" stroke-width="0.5"/>
+</g>
+<g transform="translate(48,396)">
+  <path d="M 2 -11 L 2 3 Q 2 6 5 6 L 14 6 L 14 9 L 18 9 L 18 -11 Z" fill="#f0c070" stroke="#ba7517" stroke-width="0.5"/>
+</g>
+
+</svg>
