@@ -1,117 +1,147 @@
-import pandas as pd
-import numpy as np
-from sentence_transformers import SentenceTransformer
-import chromadb
+"""Build the ChromaDB collection of Netflix titles from the source CSV."""
+
+import os
 import warnings
-warnings.filterwarnings('ignore')
-import nltk
-from nltk.tokenize import sent_tokenize
 
-nltk.download('punkt', quiet=True)
-nltk.download('punkt_tab', quiet=True)
+warnings.filterwarnings("ignore")
 
-# Load data
+import pandas as pd
+
 try:
-    df = pd.read_csv("../01-Data/netflix_titles.csv")
-    print(f"File loaded successfully: {len(df)} rows")
-except FileNotFoundError:
-    print("Error: netflix_titles.csv not found in Data folder")
-    exit()
-except Exception as e:
-    print(f"Error loading data: {e}")
-    exit()
+    from paths import COLLECTION, EMBED_MODEL, resolve_csv_path, writable_build_path
+except ImportError:
+    from .paths import COLLECTION, EMBED_MODEL, resolve_csv_path, writable_build_path
 
-# Fill missing values
-def analysis(df):
+BATCH_SIZE = 500
+
+
+def _sentence_chunk(text, max_sentence=2):
+    """Split text into chunks of max_sentence sentences."""
+    try:
+        import nltk
+        from nltk.tokenize import sent_tokenize
+
+        try:
+            nltk.data.find("tokenizers/punkt")
+        except LookupError:
+            nltk.download("punkt", quiet=True)
+            nltk.download("punkt_tab", quiet=True)
+        sentences = sent_tokenize(text)
+    except Exception:
+        # NLTK data is often unavailable on hosted runtimes.
+        import re
+
+        sentences = [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+
+    if not sentences:
+        return [text] if text.strip() else []
+
+    return [
+        " ".join(sentences[i:i + max_sentence])
+        for i in range(0, len(sentences), max_sentence)
+    ]
+
+
+def _fill_missing(df):
     for col in df.columns:
-        if df[col].dtype in ['int64', 'float64']:
-            if 'year' in col.lower():
-                df[col] = df[col].fillna(df[col].median())
-            else:
-                df[col] = df[col].fillna(df[col].mean())
+        if df[col].dtype in ["int64", "float64"]:
+            fill = df[col].median() if "year" in col.lower() else df[col].mean()
+            df[col] = df[col].fillna(fill)
         else:
             df[col] = df[col].fillna("unknown")
     return df
 
-df = analysis(df)
-print("Missing values handled")
 
-# Sentence chunking
-def sentence_chunk(text, max_sentence=2):
-    sentences = sent_tokenize(text)
-    chunks = []
-    for i in range(0, len(sentences), max_sentence):
-        chunk = " ".join(sentences[i:i+max_sentence])
-        chunks.append(chunk)
-    return chunks
+def _safe_year(value):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
 
-all_chunks = []
-metadata_chunks = []
 
-print("Creating text chunks...")
-for idx, row in df.iterrows():
-    combined_parts = [
-        str(row["title"]) if pd.notnull(row["title"]) else "",
-        str(row["director"]) if pd.notnull(row["director"]) else "",
-        str(row["cast"]) if pd.notnull(row["cast"]) else "",
-        str(row["listed_in"]) if pd.notnull(row["listed_in"]) else "",
-        str(row["description"]) if pd.notnull(row["description"]) else ""
-    ]
-    combined = " ".join(combined_parts).strip()
-    chunks = sentence_chunk(combined, max_sentence=2)
+def build_chroma_collection(chroma_path=None, csv_path=None, progress=None):
+    """Build the netflix_titles collection and return the path it was written to."""
+    import chromadb
+    from sentence_transformers import SentenceTransformer
 
-    for chunk_idx, chunk in enumerate(chunks):
-        all_chunks.append(chunk)
-        metadata_chunks.append({
-            "show_id": str(row["show_id"]),
-            "title": str(row["title"]),
-            "type": str(row["type"]),
-            "country": str(row["country"]),
-            "release_year": int(row["release_year"]),
-            "rating": str(row["rating"]),
-            "listed_in": str(row["listed_in"]),
-            "chunk_index": chunk_idx,
-            "total_chunks": len(chunks)
-        })
+    def say(msg):
+        print(f"[xpect] {msg}", flush=True)
+        if progress:
+            try:
+                progress(msg)
+            except Exception:
+                pass
 
-print(f"Created {len(all_chunks)} chunks from {len(df)} documents")
+    chroma_path = chroma_path or writable_build_path()
+    csv_path = csv_path or resolve_csv_path()
+    os.makedirs(chroma_path, exist_ok=True)
 
-# Generate embeddings
-print("Generating embeddings with all-MiniLM-L6-v2...")
-model = SentenceTransformer("all-MiniLM-L6-v2")
-embeddings = model.encode(all_chunks, show_progress_bar=True)
-print(f"Embeddings shape: {embeddings.shape}")
+    say(f"Loading data from {csv_path}")
+    df = _fill_missing(pd.read_csv(csv_path))
+    say(f"Loaded {len(df)} rows")
 
-# ChromaDB setup
-print("Initializing ChromaDB...")
-client = chromadb.PersistentClient(path='../chroma_data')
+    say("Creating text chunks...")
+    all_chunks, metadata_chunks = [], []
+    for _, row in df.iterrows():
+        combined = " ".join(
+            str(row.get(field, ""))
+            for field in ("title", "director", "cast", "listed_in", "description")
+        ).strip()
 
-try:
-    client.delete_collection(name="netflix_titles")
-    print("Deleted existing collection")
-except:
-    pass
+        chunks = _sentence_chunk(combined)
+        for chunk_idx, chunk in enumerate(chunks):
+            all_chunks.append(chunk)
+            metadata_chunks.append({
+                "show_id": str(row.get("show_id", "")),
+                "title": str(row.get("title", "")),
+                "type": str(row.get("type", "")),
+                "country": str(row.get("country", "")),
+                "release_year": _safe_year(row.get("release_year")),
+                "rating": str(row.get("rating", "")),
+                "listed_in": str(row.get("listed_in", "")),
+                "chunk_index": chunk_idx,
+                "total_chunks": len(chunks),
+            })
+    say(f"Created {len(all_chunks)} chunks from {len(df)} titles")
 
-collection = client.create_collection(
-    name="netflix_titles",
-    metadata={"description": "Netflix movies and TV shows"}
-)
+    say(f"Loading embedding model {EMBED_MODEL}...")
+    model = SentenceTransformer(EMBED_MODEL)
 
-# Batch insert
-print("Inserting embeddings into ChromaDB...")
-ids = [f"{meta['show_id']}_chunk_{meta['chunk_index']}" for meta in metadata_chunks]
-batch_size = 100
+    say("Connecting to ChromaDB...")
+    client = chromadb.PersistentClient(path=chroma_path)
+    try:
+        client.delete_collection(name=COLLECTION)
+        say("Deleted stale collection")
+    except Exception:
+        pass
 
-for i in range(0, len(embeddings), batch_size):
-    end = i + batch_size
-    collection.add(
-        ids=ids[i:end],
-        embeddings=embeddings[i:end].tolist(),
-        metadatas=metadata_chunks[i:end],
-        documents=all_chunks[i:end]
+    collection = client.create_collection(
+        name=COLLECTION,
+        metadata={"description": "Netflix movies and TV shows"},
     )
-    print(f"Inserted batch {i//batch_size + 1}/{(len(embeddings)//batch_size) + 1}")
+
+    ids = [
+        f"{meta['show_id']}_chunk_{meta['chunk_index']}"
+        for meta in metadata_chunks
+    ]
+    total_batches = (len(all_chunks) + BATCH_SIZE - 1) // BATCH_SIZE
+
+    # Embed in batches to keep peak memory low on small cloud instances.
+    for batch_no, start in enumerate(range(0, len(all_chunks), BATCH_SIZE), 1):
+        end = start + BATCH_SIZE
+        batch_docs = all_chunks[start:end]
+        embeddings = model.encode(batch_docs, show_progress_bar=False)
+        collection.add(
+            ids=ids[start:end],
+            embeddings=[e.tolist() for e in embeddings],
+            metadatas=metadata_chunks[start:end],
+            documents=batch_docs,
+        )
+        say(f"Indexed batch {batch_no}/{total_batches}")
+
+    say(f"Pipeline complete: {collection.count()} chunks stored at {chroma_path}")
+    return chroma_path
 
 
-print(f"Pipeline Complete: {collection.count()} chunks stored in ChromaDB")
-print("Database saved to: ../chroma_data")
+if __name__ == "__main__":
+    build_chroma_collection()
