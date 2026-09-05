@@ -1,1 +1,16 @@
+# Python
+__pycache__/
+*.pyc
 
+# Environment variables
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environment
+venv/
+.venv/
+
+# Vector store
+vector_store/
