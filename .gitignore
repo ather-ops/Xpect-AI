@@ -14,4 +14,3 @@ venv/
 
 # Vector store
 chroma_data/
-vector_store/
